@@ -1,163 +1,91 @@
 # Rest API untuk Data Provinsi Indonesia
 
-Proyek ini adalah REST API sederhana yang digunakan untuk mengambil data provinsi di Indonesia dari sumber eksternal dan menyimpannya ke database MySQL. API ini dibuat menggunakan bahasa pemrograman Go dengan framework **Gin**.
+Proyek ini adalah REST API sederhana yang mengambil data provinsi dari sumber eksternal, menyimpannya ke database MySQL, dan menyediakan endpoint untuk mengakses data tersebut.
 
-## ✨ Fitur
-- **Ambil Data Provinsi dari API**: Mengambil data provinsi dari API eksternal.
-- **Simpan Data ke Database**: Menyimpan data ke database MySQL.
-- **Ambil Data dari Database**: Mengambil data provinsi yang sudah tersimpan di database.
+## Fitur
+- Mengambil data provinsi dari API eksternal.
+- Menyimpan data ke dalam database MySQL.
+- Menampilkan daftar provinsi yang tersimpan dalam database.
 
----
+## Teknologi yang Digunakan
+- Golang
+- Gin (framework untuk web)
+- MySQL
+- GORM (ORM untuk database)
 
-## 🚀 Cara Menjalankan Proyek
+## Persiapan Sebelum Menjalankan
+1. **Install Golang**: Pastikan Golang sudah terinstall di komputer kamu.
+2. **Setup MySQL**: Buat database baru dengan nama `wilayahs`.
+3. **Buat tabel `provinces` di MySQL**:
+    ```sql
+    CREATE TABLE provinces (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        code VARCHAR(10) NOT NULL,
+        name VARCHAR(100) NOT NULL
+    );
+    ```
+4. **Install package yang diperlukan**:
+    ```sh
+    go mod init Rest-API
+    go get github.com/gin-gonic/gin
+    go get github.com/go-sql-driver/mysql
+    ```
 
-### 1️⃣ Persiapan
-Sebelum menjalankan proyek ini, pastikan sudah menginstal:
-- Go (minimal versi 1.17)
-- MySQL (pastikan sudah membuat database `wilayahs` dengan tabel `provinces`)
-- Git
+## Cara Menjalankan
+1. **Clone repository ini**:
+    ```sh
+    git clone https://github.com/11TEL12Pandita/Rest-API.git
+    cd Rest-API
+    ```
+2. **Jalankan aplikasi**:
+    ```sh
+    go run main.go
+    ```
+3. **API akan berjalan di `http://localhost:8080`**
 
-Kemudian, clone repository ini:
-```sh
-$ git clone https://github.com/11TEL12Pandita/Rest-API.git
-$ cd Rest-API
-```
-
-### 2️⃣ Instalasi Dependensi
-Jalankan perintah berikut untuk menginstal dependensi yang dibutuhkan:
-```sh
-$ go mod tidy
-```
-
-### 3️⃣ Konfigurasi Database
-Pastikan database MySQL sudah berjalan, lalu buat database dan tabel dengan struktur berikut:
-```sql
-CREATE DATABASE wilayahs;
-USE wilayahs;
-CREATE TABLE provinces (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(10) NOT NULL,
-    name VARCHAR(255) NOT NULL
-);
-```
-
-### 4️⃣ Menjalankan Server
-Jalankan perintah berikut untuk menjalankan server:
-```sh
-$ go run main.go
-```
-Server akan berjalan di `http://localhost:8080`
-
----
-
-## 🔗 Endpoint API
-
-### 1️⃣ Ambil Semua Provinsi dari Database
-- **Endpoint**: `GET /provinces`
-- **Deskripsi**: Mengambil semua provinsi yang sudah tersimpan di database.
-- **Response Contoh**:
-  ```json
-  {
-    "status": "success",
-    "code": 200,
-    "message": "Successfully get data",
-    "data": [
-      {
-        "id": 1,
-        "code": "11",
-        "name": "Aceh"
-      },
-      {
-        "id": 2,
-        "code": "12",
-        "name": "Sumatera Utara"
-      }
-    ]
-  }
-  ```
-
-### 2️⃣ Fetch Data Provinsi dari API Eksternal dan Simpan ke Database
+## Endpoint API
+### 1. Fetch Data Provinsi dari API Eksternal
 - **Endpoint**: `GET /fetch-provinces`
-- **Deskripsi**: Mengambil data dari API eksternal dan menyimpannya ke database MySQL.
-- **Response Contoh**:
-  ```json
-  {
-    "status": "success",
-    "code": 200,
-    "message": "Successfully fetched and updated data"
-  }
-  ```
-
----
-
-## 🛠 Penjelasan Kode
-
-### 📌 Struktur Kode
-- **Struct `Province`**: Digunakan untuk merepresentasikan data provinsi.
-- **Fungsi `main`**: Menjalankan server menggunakan framework Gin.
-- **Fungsi `FetchAndStoreProvinces`**: Mengambil data dari API eksternal dan menyimpannya ke database.
-- **Fungsi `GetProvinces`**: Mengambil data dari database dan mengembalikannya dalam format JSON.
-
-### 📝 Contoh Potongan Kode
-**Mengambil Data dari API dan Menyimpannya ke Database:**
-```go
-func FetchAndStoreProvinces(c *gin.Context) {
-    resp, err := http.Get("https://emsifa.github.io/api-wilayah-indonesia/api/provinces.json")
-    if err != nil {
-        log.Println("Gagal mengambil data dari API:", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data dari API"})
-        return
+- **Deskripsi**: Mengambil data provinsi dari API eksternal dan menyimpannya ke dalam database.
+- **Response**:
+    ```json
+    {
+      "status": "success",
+      "code": 200,
+      "message": "Successfully fetched and updated data"
     }
-    defer resp.Body.Close()
+    ```
 
-    body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-        log.Println("Gagal membaca response API:", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membaca response API"})
-        return
-    }
-
-    var provinces []Province
-    if err := json.Unmarshal(body, &provinces); err != nil {
-        log.Println("Gagal decode JSON:", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal decode JSON"})
-        return
-    }
-
-    _, err = db.Exec("TRUNCATE TABLE provinces")
-    if err != nil {
-        log.Println("Gagal menghapus data lama:", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus data lama"})
-        return
-    }
-
-    for _, p := range provinces {
-        _, err := db.Exec("INSERT INTO provinces (code, name) VALUES (?, ?)", p.Code, p.Name)
-        if err != nil {
-            log.Println("Gagal insert data:", err)
+### 2. Mendapatkan Daftar Provinsi dari Database
+- **Endpoint**: `GET /provinces`
+- **Deskripsi**: Mengambil data provinsi dari database.
+- **Response**:
+    ```json
+    {
+      "status": "success",
+      "code": 200,
+      "message": "Successfully get data",
+      "data": [
+        {
+          "id": 1,
+          "code": "11",
+          "name": "Aceh"
         }
+      ]
     }
-    
-    fmt.Println("Data provinsi berhasil diperbarui di database!")
-    c.JSON(http.StatusOK, gin.H{
-        "status":  "success",
-        "code":    200,
-        "message": "Successfully fetched and updated data",
-    })
-}
-```
+    ```
 
----
+## Penjelasan Singkat Kode
+- **`main.go`**:
+  - Menghubungkan ke database.
+  - Menjalankan server menggunakan Gin.
+  - Menyediakan endpoint `/provinces` dan `/fetch-provinces`.
+- **`FetchAndStoreProvinces()`**:
+  - Mengambil data provinsi dari API eksternal.
+  - Menyimpan data ke database.
+- **`GetProvinces()`**:
+  - Mengambil data provinsi dari database dan mengirimkannya dalam format JSON.
 
-## 🤝 Kontribusi
-Jika ingin berkontribusi atau memiliki masukan, silakan fork repository ini dan buat pull request! 🚀
-
----
-
-## 📜 Lisensi
-Proyek ini menggunakan lisensi MIT. Silakan gunakan dan modifikasi sesuai kebutuhan.
-
----
-
-### 🔥 Selamat ngoding! 🚀
+## Selesai 🎉
+Sekarang API kamu sudah bisa digunakan! Kalau ada pertanyaan atau kendala, tinggal tanya aja. 😃
 
